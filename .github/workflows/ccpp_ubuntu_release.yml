@@ -13,8 +13,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Get current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y%m%d')"
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y%m%d')"
     - name: change date in version
       run: sed -i "s/+UNKNOWN/_$(date '+%F')/" version.inc
     - name: update clock
