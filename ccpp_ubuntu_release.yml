@@ -1,0 +1,53 @@
+name: C/C++ CI ubuntu
+
+on:
+  release:
+    types: [created]
+
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+    - name: change date in version
+      run: sed -i "s/+UNKNOWN/_$(date '+%F')/" version.inc
+    - name: update clock
+      run: sudo hwclock -s
+    - name: mkdir build
+      run: mkdir build
+    - name: make slic3r
+      working-directory: ./build
+      run: echo -n -e 'LOOOL' > slic3r++
+    - name: create directory and copy into it
+      working-directory: ./build
+      run: |
+        mkdir package
+        mkdir package/bin
+        cp -f ../version.inc version.inc
+    - name: copy bin
+      working-directory: ./build
+      run: cp -f src/slic3r++ package/bin/slic3r++
+    - name: create sh from echo
+      working-directory: ./build/package
+      run: |
+        echo -e '#!/bin/bash\nDIR=$(readlink -f "$0" | xargs dirname)\nexport LD_LIBRARY_PATH="$DIR/bin"\nexec "$DIR/bin/slic3r++" "$@"' >slic3r++
+        chmod u+x slic3r++
+        tar -cvf ../slic3r++.tar .
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: nightly_linux.tar
+        path: build/slic3r++.tar
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./build/slic3r++.tar
+        asset_name: slic3r++.tar
+        asset_content_type: application/x-tar
